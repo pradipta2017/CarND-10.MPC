@@ -100,6 +100,56 @@ int main() {
           */
           double steer_value;
           double throttle_value;
+          // pradipta begin
+
+          for(int i=0; i < ptsx.size(); i++){
+            double shift_x = ptsx[i] - px;
+            double shift_y = ptsy[i] - py;
+
+            ptsx[i] = (shift_x * cos(0-psi) - shift_y * sin(0-psi));
+            ptsy[i] = (shift_x * sin(0-psi) + shift_y * cos(0-psi));
+          }
+
+          double* ptrx = &ptsx[0];
+          double* ptry = &ptsy[0];
+
+          Eigen::Map<Eigen::VectorXd> ptsx_transformed(ptrx, ptsx.size());
+          Eigen::Map<Eigen::VectorXd> ptsy_transformed(ptry, ptsx.size());
+
+
+          auto coeffs = polyfit(ptsx_transformed,ptsy_transformed,3);
+
+          //calculate the cross track error
+
+          //double cte = polyval(coeffs, 0);
+          double fx = polyeval(coeffs,px);
+          double cte = fx - py;
+          //double psi_dest = -atan(coeffs[1]);
+          
+
+          // TODO: calculate the orientation error
+          double epsi = -atan(coeffs[1]);
+          //double epsi = psi - psi_dest;
+
+          Eigen::VectorXd state(6);
+          //state << x, y, psi, v, cte, epsi;
+          state << 0, 0, 0, 0, cte, epsi;
+
+          
+
+
+          auto vars = mpc.Solve(state, coeffs);
+
+          steer_value = vars[0]/(deg2rad(25) * 2.67); //Lf
+          throttle_value = vars[1];
+
+
+          //pradipta end
+
+
+
+
+
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -108,11 +158,23 @@ int main() {
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
-          vector<double> mpc_x_vals;
-          vector<double> mpc_y_vals;
+          vector<double> mpc_x_vals; //vars values
+          vector<double> mpc_y_vals; //vars values
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
+
+          //pradipta begin 2
+
+          for(int i=2; i<vars.size();i++){
+            if(i%2 == 0){
+              mpc_x_vals.push_back(vars[i]);
+            } else {
+              mpc_y_vals.push_back(vars[i]);
+            }
+          }
+
+          //pradipta end 2
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -124,8 +186,22 @@ int main() {
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
 
-          msgJson["next_x"] = next_x_vals;
-          msgJson["next_y"] = next_y_vals;
+
+          //pradipta begin 3
+
+          double poly_incr = 2.5;
+          int num_points = 25;
+          for(int i=0; i < num_points; i++){
+            next_x_vals.push_back(poly_incr*i);
+            next_y_vals.push_back(polyeval(coeffs, poly_incr*i));
+          }
+
+
+          //pradipta end 3
+
+
+          msgJson["next_x"] = next_x_vals; //ptsx values
+          msgJson["next_y"] = next_y_vals; //ptsy values
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
