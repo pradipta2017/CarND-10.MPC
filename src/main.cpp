@@ -70,12 +70,12 @@ int main() {
 
   // MPC is initialized here!
   MPC mpc;
-
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
+    
     string sdata = string(data).substr(0, length);
     cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
@@ -98,58 +98,56 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+          double steer_value = j[1]["steering_angle"];
+          double throttle_value = j[1]["throttle"];
           // pradipta begin
+
 
           for(int i=0; i < ptsx.size(); i++){
             double shift_x = ptsx[i] - px;
             double shift_y = ptsy[i] - py;
 
-            ptsx[i] = (shift_x * cos(0-psi) - shift_y * sin(0-psi));
-            ptsy[i] = (shift_x * sin(0-psi) + shift_y * cos(0-psi));
+            ptsx[i] = (shift_x * cos(psi) + shift_y * sin(psi));
+            ptsy[i] = (-shift_x * sin(psi) + shift_y * cos(psi));
           }
-
+          
           double* ptrx = &ptsx[0];
           double* ptry = &ptsy[0];
 
           Eigen::Map<Eigen::VectorXd> ptsx_transformed(ptrx, ptsx.size());
           Eigen::Map<Eigen::VectorXd> ptsy_transformed(ptry, ptsx.size());
 
+          // 3rd order polynomial fit 
+          // CTE and EPSI from vehicle coordinates
 
           auto coeffs = polyfit(ptsx_transformed,ptsy_transformed,3);
-
-          //calculate the cross track error
-
-          //double cte = polyval(coeffs, 0);
-          double fx = polyeval(coeffs,px);
-          double cte = fx - py;
-          //double psi_dest = -atan(coeffs[1]);
           
+          //calculate the cross track error
+          const double cte = polyeval(coeffs, 0);
 
           // TODO: calculate the orientation error
-          double epsi = -atan(coeffs[1]);
-          //double epsi = psi - psi_dest;
+          const double epsi = -atan(coeffs(1));
+
+          const double latency = 0.05; // 100 milliseconds
+          const double Lf = 2.67;
+
+          // Applying latency
+          double x_delay = v * cos(psi)*latency;
+          double psi_delay = - v * steer_value / Lf * latency;
+          double v_delay = v + throttle_value * latency;
+
 
           Eigen::VectorXd state(6);
           //state << x, y, psi, v, cte, epsi;
-          state << 0, 0, 0, 0, cte, epsi;
-
-          
-
+          state << x_delay, 0.0, psi_delay, v_delay, cte, epsi;
 
           auto vars = mpc.Solve(state, coeffs);
 
-          steer_value = vars[0]/(deg2rad(25) * 2.67); //Lf
+          steer_value = vars[0]/deg2rad(25) ; //Lf
           throttle_value = vars[1];
 
 
           //pradipta end
-
-
-
-
-
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
