@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 10;
-double dt = 0.15;
+size_t N = 15;
+double dt = 0.18;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -67,8 +67,8 @@ class FG_eval {
     
     // Minimize change-rate.
     for(int i=0; i < N-1; i++) {
-      fg[0] += 5 * CppAD::pow(vars[delta_start + i], 2);
-      fg[0] += 5* CppAD::pow(vars[a_start + i], 2);
+      fg[0] += 20 * CppAD::pow(vars[delta_start + i], 2);
+      fg[0] += 20* CppAD::pow(vars[a_start + i], 2);
     }
 
 

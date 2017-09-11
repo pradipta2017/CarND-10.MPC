@@ -128,7 +128,7 @@ int main() {
           // TODO: calculate the orientation error
           const double epsi = -atan(coeffs(1));
 
-          const double latency = 0.05; // 100 milliseconds
+          const double latency = 0.1; // 100 milliseconds
           const double Lf = 2.67;
 
           // Applying latency
