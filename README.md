@@ -9,7 +9,7 @@ State
 * y = y position of the vehicle
 * psi = Orientation of the vehicle
 * v = velocity of the vehicle
-* 
+
 Below are the 2 error state of the vehicle.
 * cte = Cross Track Error of the vehicle
 * epsi = Orientation error of the vehicle.
@@ -20,8 +20,8 @@ The actuator constraints for this model are:
 * a = throttle value
 
 Update equation of this model
-* x(?t+1)?? =x(?t)?? +v(?t) ?cos(psi(?t))?dt
-* y(?t+1) =y(?t)?? +v(?t)?sin(psi(?t))?dt
+* x(t+1) =x(t) + v(t) * cos(psi(t))* dt
+* y(t+1) =y(t) + v(t) * sin(psi(t))* dt
 * psi(t+1) = psi(t) + v(t)/Lf * delta * dt
 * v(t+1) = v(t) + a(t) * dt
 
@@ -44,9 +44,9 @@ The predicted waypoints were being transformed from global coordinates to respec
 # Model Predictive Control with Latency
 
 I implemented the project with 100 ms as latency. Below are the latency equation used in the project:
-	x_delay = x + v * cos(psi) * latency
-	v_delay = v + throttle_value * latency
-	psi_delay = psi + v * steer_value/Lf * latency
+* x_delay = x + v * cos(psi) * latency
+* v_delay = v + throttle_value * latency
+* psi_delay = psi + v * steer_value/Lf * latency
 	
 
 ---
